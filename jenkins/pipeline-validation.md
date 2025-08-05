@@ -27,3 +27,12 @@ java -jar jenkins-cli.jar \
 
 ```
 add `-webSocket` if you want to use the WebSocket transport instead of HTTP.
+
+### Raw HTTP endpoint
+
+use curl like this:
+
+```bash
+curl -X POST -u user:APITOKEN \
+  -F "jenkinsfile=< Jenkinsfile" \
+  https://jenkins.example.com/pipeline-model-converter/validate
