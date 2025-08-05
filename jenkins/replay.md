@@ -235,3 +235,57 @@ Groovy script console|Loop over lastSuccessfulbuilds and do: `replay.run('error(
    * Replace prod secrets ith dummy credentials that deliberately fail authentication (e.g., invalid Azure keys)
    * Replay real builds; deploy stages exit non-zero on login failures
      You still see the full step stack (so plugin class-loading is exercise) but nothing reaches prod endpoints
+
+## Replay powershell step
+In order to replay powershell from Linux Jenkins container, below are the practical ways teams keep their upgrade-test loop fast without spinning up a full production-grade Windows fleet:
+
+| Option|What you test|What you still need|
+|---|---|---|
+| **A. Add one lightweight Windows agent** (VM, laptop, or Win-container)   | ✔ Controller ↔ agent remoting after the upgrade<br>✔ `powershell`, `bat`, `pwsh` step wiring<br>✔ Any plugin that shells out to MSBuild, NuGet, etc. | *One* throw-away Windows box/VM (can even be your own workstation).<br>Label it `win-smoke` (or whatever your Pipelines ask for) and point it at the test controller with `java -jar agent.jar …`.                                                           |
+| **B. Convert jobs to `pwsh` step on the built-in Linux executor**         | ✔ Most scripts that are pure PowerShell (no COM, no Windows-only paths).<br>✔ Plugin class-loading, CPS deserialisation.                             | Install **PowerShell 7** in the test-controller container and make sure the **PowerShell plugin ≥2.0** is installed; then mass-replace `powershell` with `pwsh` when you inject the script for replay.<br>*Good if your scripts are already cross-platform.* |
+| **C. Force-fail before any Windows step** (env flag + `error 'sim fail'`) | ✔ Pipeline loads, deserialises, allocates a node.<br>✔ Missing-plugin / symbol problems still surface.| No Windows agent at all—but you **won’t** exercise the PowerShell plugin itself. Suitable when you only care about controller/plugin breakage, not the Windows runtime.|
+
+## Quick recipe -- one disposable Windows agent
+1. Keep the upgraded controller in a Linux container
+2. Spin up a temporary Windows vm
+3. Connect it as an inbound agent
+    ```powershell
+    $controller = 'http://host.docker.internal:8081'   # or 127.0.0.1 if VM bridge
+    Invoke-WebRequest "$controller/jnlpJars/agent.jar" -OutFile agent.jar
+    java -jar agent.jar `
+         -jnlpUrl "$controller/computer/win-smoke-test/jenkins-agent.jnlp" `
+         -secret [copy-paste secret] `
+         -workDir C:\jenkins
+
+4. Label the node `win` (or whatever your production jobs use)
+5. Run the replay storm exactly as described earlier. Every job that needs Windos lands on this one stub agent; the deployment stage still exists immediately with `error '💥 simulated fail'
+
+## Zero Windows infrastructure? Use `pwsh` instead of powershell
+if your script are plain Poershell (no sc.exe no registry tweaks, no Windows path assumptions), switch to the cross-platform `pwsh` step for the smoke test:
+```groovy
+stage('Unit tests') {
+  steps {
+    pwsh '''
+      $ErrorActionPreference = "Stop"
+      ./build.ps1 -test
+    '''
+  }
+}
+```
+* Install Powershell 7 inside the Linux controller container
+* In the replay-injection loop, add a regex that rewrite powershell ''' → pwsh '''
+
+This will gives you a single-container test harness - but only if your scripts truly don't rely on Windows-only features
+
+## If you only care about controller/plugin wiring
+Keep the Linux-only setup and inject error() before the first Windows stage:
+```groovy
+def injected = script.replaceFirst(/stage\\s*\\(['"]Deploy.*?\\)/,
+    "stage('Deploy – skipped in smoke test') {\n  steps { error 'Sim fail' }\n}\n\$0")
+
+```
+The build stops before hitting `powershell`, yet you still exercises:
+ * CPS deserialisation
+ * All non-Windows plugins
+ * Job/Build APIs
+This is great for a five-minute sanity check, but it can't tell you if the new Powshell plugin jar sudeenly fails to launch
