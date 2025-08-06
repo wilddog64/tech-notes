@@ -106,7 +106,7 @@ kubectl logs -n csi-smb <driver-pod> -c smb --tail=100
 spec:
   csi:
     driver: smb.csi.k8s.io
-    volumeHandle: car-agency-batch-bud-smb  # must be unique
+    volumeHandle: xyz-smb  # must be unique
     volumeAttributes:
       source: \\host\Budget\
 ```
