@@ -9,7 +9,6 @@ Automation and pipeline-related notes for Jenkins, including memory tuning, vali
 - [Memory and CPU limits for a Jenkins container](jenkins/jenkins-memory.md)
 - [Pipeline Migration](jenkins/pipeline-migration.md)
 - [Use Jenkins replay to validate pipeline migration](jenkins/pipeline-replay.md)
-- [Requirements for Pipeline Validation](jenkins/pipeline-validation.md)
 
 ## 📁 Kubernetes
 
