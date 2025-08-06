@@ -289,3 +289,57 @@ The build stops before hitting `powershell`, yet you still exercises:
  * All non-Windows plugins
  * Job/Build APIs
 This is great for a five-minute sanity check, but it can't tell you if the new Powshell plugin jar sudeenly fails to launch
+
+## Handling large Jenkins_home directories on Windows
+
+### Pack necessary files, directories from jenkins_home directory
+
+Must keep|Why
+---|---
+config.xml, credentials.xml, nodes, secrets|Core & global settings, credentials, and decryption keys
+plugins|The exact plugin versions you intend to exercise
+users|API tokens you'll use to run the replay storm
+jobs/*/config.xml (+folder equivalents)|Declarative/Scripted pipelines live here
+Optional jobs/*/builds/<build#>|Only the specific `build numbers` you plan to replay (`ReplayAction` pulls the original Grooovy script from the build directory)
+
+Everything else -- `workspaces`, `artifacts`, old `build logs`, `fingerprints`, `archive/ clouds` -- can be dropped for this purpose
+
+## Create a slim archive
+Make a manual `tar/zip` with excludes
+```bash
+# Windows PowerShell  (run from C:\Jenkins)
+tar -C C:\ -czf %TEMP%\jenkins_smoke.tgz `
+    jenkins_home\config.xml `
+    jenkins_home\credentials.xml `
+    jenkins_home\secrets `
+    jenkins_home\plugins `
+    jenkins_home\users `
+    --exclude='jenkins_home\jobs\*\builds' `
+    --exclude='jenkins_home\workspace' `
+    --exclude='jenkins_home\archive' `
+    --exclude='jenkins_home\fingerprints'
+```
+* On Linux you'd sap `\` → `/` in the patterns
+* The -C C:\ trick strips the C: prefix so paths unpack cleanly on Linux
+
+If you still need one or two build folder to replay, whitelist them:
+```bash
+--exclude='jenkins_home/jobs/*/builds' \
+--include='jenkins_home/jobs/*/builds/123' \
+--include='jenkins_home/jobs/*/builds/lastSuccessfulBuild'
+
+```
+## Restore into the Linux test contaier
+```bash
+mkdir ~/jenkins-home-clone
+tar xzf jenkins_smoke.tgz -C ~/jenkins-home-clone
+chown -R $(id -u):$(id -g) ~/jenkins-home-clone/jenkins_home
+chmod 600 ~/jenkins-home-clone/jenkins_home/secrets/*
+podman run -d --name jenkins-test \
+  -p 8081:8080 -v ~/jenkins-home-clone/jenkins_home:/var/jenkins_home:Z \
+  jenkins/jenkins:2.517.2-lts-jdk17          # ← the core you’re validating
+ 
+```
+* Jenkins boots with a footprint that's typically < 150 MB
+* Credentials decrypt fine because the secret keys came along
+* Replay (with your `pwsh` swap + `error '💥 smoke-test stop'`) exercises plugin loading without dragging gigabytes of logs and artifacts
