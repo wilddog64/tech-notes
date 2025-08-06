@@ -17,12 +17,12 @@ If you don’t need to preserve the data	If you must keep the data
  • If the PV’s reclaimPolicy is Delete, the underlying disk is removed automatically.
 3. Apply a brand-new PVC manifest with the desired volumeName (or leave volumeName empty and let dynamic provisioning create a fresh PV).	1. Scale down / stop the workload.
 2. Orphan the PV so the backing disk isn’t deleted:```bash
-kubectl delete pvc car-agency-batch-pvc-qa1 --cascade=orphan -n <ns>	
+kubectl delete pvc car-agency-batch-pvc-qa1 --cascade=orphan -n <ns>
 ```
 3. Edit the saved YAML (remove metadata.resourceVersion, uid, and the old claimRef; change metadata.name or spec.volumeName as needed).
 4. Re-apply it: kubectl apply -f pvc-fixed.yaml.
  • If you changed the PVC name you’ll also need to update the Pod/Deployment/StatefulSet to mount the new claim.
- • If using a StatefulSet, PVC names are generated; the simpler path is usually to create a new volume and perform an in-container copy or storage-level clone/snapshot.	
+ • If using a StatefulSet, PVC names are generated; the simpler path is usually to create a new volume and perform an in-container copy or storage-level clone/snapshot.
 Key points to remember
 You cannot patch volumeName, accessModes, storageClassName, or selector on an existing, bound PVC.
 With vSphere CSI the easiest fix is often: delete PVC → let CSI reprovision a fresh PV that matches the new name/size → remount.
@@ -965,9 +965,9 @@ Bound PVC	kubectl delete pvc car-agency-batch-bud-pvc-qa1 -n car-agency-batch-qa
 VolumeAttachment leftover (driver thinks the disk is still attached)	`kubectl get volumeattachment
 pv-protection finalizer and everything above is already gone	Remove the finalizer manually:
 ```bash
-kubectl patch pv car-agency-batch-bud-smb-qa1 \	
---type=merge \	
--p '{"metadata":{"finalizers":null}}'	
+kubectl patch pv car-agency-batch-bud-smb-qa1 \
+--type=merge \
+-p '{"metadata":{"finalizers":null}}'
 
 Full checklist to unblock it:
 
@@ -1136,14 +1136,14 @@ Point the workload at the new claim (recommended)	• Edit the workload spec and
 kubectl edit deploy car-agency-batch -n car-agency-batch-qa1 (or patch/commit in Git and let ArgoCD sync).
 • Save; the scheduler will re-queue the Pod and it will start.
 Re-create a PVC with the old name	```yaml
-apiVersion: v1	
-kind: PersistentVolumeClaim	
-metadata:	
-name: car-agency-batch-pvc-qa1	
-namespace: car-agency-batch-qa1	
-spec:	
-accessModes: ["ReadWriteMany"]	
-resources:	
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+name: car-agency-batch-pvc-qa1
+namespace: car-agency-batch-qa1
+spec:
+accessModes: ["ReadWriteMany"]
+resources:
 requests:
   storage: 20Gi
 volumeName: car-agency-batch-smb-qa1 # existing PV
