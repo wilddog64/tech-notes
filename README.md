@@ -15,3 +15,7 @@ Automation and pipeline-related notes for Jenkins, including memory tuning, vali
 Guides and debugging references for Kubernetes environments.
 
 - [Kubernetes PVC/PV + SMB CSI Troubleshooting Guide](kubernetes/pvc-pv-smb-troubleshooting-guide.md)
+
+## 📁 AI
+### [gpt-oss introduction](ai/gpt-oss/gpt-oss.md)
+### [gpt-oss - setup and running on m4 air](ai/gpt-oss/m4-setup.md)
