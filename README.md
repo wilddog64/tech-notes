@@ -19,3 +19,6 @@ Guides and debugging references for Kubernetes environments.
 ## 📁 AI
 ### [gpt-oss introduction](ai/gpt-oss/gpt-oss.md)
 ### [gpt-oss - setup and running on m4 air](ai/gpt-oss/m4-setup.md)
+
+## 📁 Apple/Mac OS
+- [Universal Control](apple/universal-control.md)
