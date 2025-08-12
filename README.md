@@ -22,4 +22,4 @@ Guides and debugging references for Kubernetes environments.
 
 ## 📁 Apple/Mac OS
 - [
-❯ put > ~/Library/LaunchAgents/local.caffeinatUniversal Control](apple/universal-control.md)
+❯ [Mac Uinversal Control Troubleshoot guide](apple/mac-universal-control.md)
