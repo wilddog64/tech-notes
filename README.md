@@ -21,5 +21,5 @@ Guides and debugging references for Kubernetes environments.
 ### [gpt-oss - setup and running on m4 air](ai/gpt-oss/m4-setup.md)
 
 ## 📁 Apple/Mac OS
-- [
-❯ [Mac Uinversal Control Troubleshoot guide](apple/mac-universal-control.md)
+
+- [Mac Uinversal Control Troubleshoot guide](apple/mac-universal-control.md)
