@@ -135,3 +135,36 @@ kubectl get pv -o jsonpath='{range .items[*]}{"\n"}{.metadata.name}{"  "}{.spec.
 - Scale down workloads before deleting PVCs.
 - Avoid reusing `volumeHandle` for different SMB paths.
 - Don’t rely on `kubectl apply` to update existing PVs—use `patch` or recreate instead.
+
+### Takeaways
+
+- Finalizer from the PVC (__kubernetes.io/pvc-protection__) and CSI controllers (providsioner/attacher/snapshotter) stick when cleanup can't finish (driver down, VolumeAttachement stuck, node gone, RBAC/API errors)
+- PV __.spec.claimRef__: with __Retain__ reclaim policy, it is `expected` to remain; admin must clea up the backend volume and clear __claimRef__ to reuse. Wtih __Delete__, a broken CSI often leaves PV/PVC stuck
+
+### Safe cleanup (automate with tool)
+
+1. Guardrail
+  * PVC has deletionTimestamp and finalizer for > N minutes
+  * No Pods reference the PVC
+  * No VolumeAttachment exists for the PV
+2. If reclaimPolicy=Delete and backend gone: patch PVC to drop finalizers
+
+   ```bash
+   kubectl patch pvc <name> -n <ns> -p '{"metadata":{"finalizers":[]}}'
+   ```
+3. If reclaimPolicy=Retain and you cleaned storage: clear PV claimRef to reuse
+
+   ```bash
+   kubectl patch pv <pv-name> --type=json -p='[{"op":"remove","path":"/spec/claimRef"}]'
+   ```
+4. handy queries
+
+```bash
+   # Find stuck PVCs (pending deletion with finalizers)
+   kubectl get pvc -A -o json | jq -r '
+ .items[] | select(.metadata.deletionTimestamp and (.metadata.finalizers|length>0)) |
+ "\(.metadata.namespace)/\(.metadata.name) finalizers=\(.metadata.finalizers)"'
+
+   # Check VolumeAttachments for a PV
+   kubectl get volumeattachment -A --field-selector spec.source.persistentVolumeName=<pv>
+```
