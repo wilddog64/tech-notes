@@ -24,3 +24,4 @@ Automation and pipeline-related notes for Jenkins, including memory tuning, vali
 Guides and debugging references for Kubernetes environments.
 
 - [Kubernetes PVC/PV + SMB CSI Troubleshooting Guide](kubernetes/pvc-pv-smb-troubleshooting-guide.md)
+- [k3s/k3d](kubernetes/k3s-k3d.md)
