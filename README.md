@@ -11,6 +11,10 @@ This repository contains technical notes categorized by topic. Each section prov
 
 - [Mac Uinversal Control Troubleshoot guide](apple/mac-universal-control.md)
 
+## 📁 ArgoCD tips/tricks
+
+- [Argocd Command line/programming tips](argocd/argocd-command-line.md)
+
 ## 📁 Jenkins
 
 Automation and pipeline-related notes for Jenkins, including memory tuning, validation, and migration strategies.
