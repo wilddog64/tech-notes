@@ -25,3 +25,9 @@ Guides and debugging references for Kubernetes environments.
 
 - [Kubernetes PVC/PV + SMB CSI Troubleshooting Guide](kubernetes/pvc-pv-smb-troubleshooting-guide.md)
 - [k3s/k3d](kubernetes/k3s-k3d.md)
+
+## 📁 Linux
+
+General Linux tips, tricks, and troubleshooting steps.
+
+- [Tmux: How to find lost nvim sessions](linux/tmux/finding-nvim-sessions.md)
