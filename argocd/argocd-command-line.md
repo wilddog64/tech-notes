@@ -300,3 +300,31 @@ Exit status (GNU xargs, userful for CI):
 * `125` couldn't run;
 * `126/127` not execuable/not found;
 * `137` killed by signal 9 (e.g. out of memory)
+
+How can a custom sript to handle -n8 from xargs
+
+The bash script should iternate over `"$@"` (the arguments passed to that invocatioin):
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+for app in "$@"; do
+  echo "processing $app"
+  # do work per $app here
+done
+```
+
+Then call it like:
+
+```bash
+printf '%s\n' app1 app2 app3 app4 app5 app6 app7 | xargs -0 -n8 -P6 <custom-script>
+```
+Common gotchas
+
+* Don't use `-I{}` if you want batching as `-I` will forces one iterm per invocation
+* Use `-0` + `find -print0` (or`printf '%s\0`) for paths with spaces/newlines
+* If you need to insert args not `at the end`, wrap with `bash -c`:
+  ```bash
+  … | xargs -0 -n32 -P6 bash -c 'mycmd --flag "$@"' _
+  ```
+* If your script writes shared files/logs, ensure `concurrency safty` (`mktemp`, unique filenames, or `flock`). Outputs from parallel jobs may interleave on stdout -- prefix lines or write per job logs if needed
